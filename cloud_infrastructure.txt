@@ -1,0 +1,220 @@
+gcloud auth list
+gcloud config list project
+
+gcloud config set project [PROJECT_ID]
+gcloud config set account `ACCOUNT`
+
+
+gcloud config set compute/zone "us-central1-c"
+export ZONE=$(gcloud config get compute/zone)
+
+gcloud config set compute/region "us-central1"
+export REGION=$(gcloud config get compute/region)
+
+gcloud compute networks list
+	default
+	taw-custom-network
+	
+gcloud compute networks subnets list \
+   --network taw-custom-network   
+	
+	
+gcloud compute firewall-rules list --filter="network:default"
+	--format=json
+	
+gcloud compute firewall-rules list --filter="network:taw-custom-network"
+
+
+gcloud compute routes list
+
+gcloud compute routes list --filter="network:default"
+
+gcloud config set compute/zone "us-west1-a"
+export ZONE=$(gcloud config get compute/zone)
+
+gcloud config set compute/region "us-west1"
+export REGION=$(gcloud config get compute/region)
+
+gcloud compute networks create taw-custom-network --subnet-mode custom
+
+gcloud compute networks subnets create subnet-us-west1 \
+   --network taw-custom-network \
+   --region us-west1 \
+   --range 10.0.0.0/16
+   
+gcloud compute networks subnets create subnet-us-east1 \
+   --network taw-custom-network \
+   --region us-east1 \
+   --range 10.1.0.0/16
+
+gcloud compute networks subnets create subnet-us-central1 \
+   --network taw-custom-network \
+   --region us-central1 \
+   --range 10.2.0.0/16
+
+gcloud compute networks subnets list \
+   --network taw-custom-network   
+   
+gcloud compute firewall-rules create "nw101-allow-internal" \
+--network "taw-custom-network" \
+--allow tcp:0-65535,udp:0-65535,icmp \
+--source-ranges "10.0.0.0/16","10.2.0.0/16","10.1.0.0/16"
+
+gcloud compute firewall-rules create nw101-allow-http \
+--network taw-custom-network \
+--allow tcp:80 \
+--source-ranges 0.0.0.0/0 \
+--target-tags http
+
+gcloud compute firewall-rules create nw101-allow-icmp \
+--network "taw-custom-network" \
+--allow icmp \
+--target-tags rules
+
+
+gcloud compute firewall-rules create "nw101-allow-ssh" \
+--network "taw-custom-network" \
+--allow tcp:22 \
+--target-tags "ssh"
+
+gcloud compute firewall-rules create "nw101-allow-rdp" \
+--network "taw-custom-network"
+--allow tcp:3389 \
+
+
+--------------------------------------------------------------------------------------------------
+gcloud compute instances create us-test-01 \
+--subnet subnet-us-east4 \
+--zone us-east4-a \
+--machine-type e2-standard-2 \
+--tags ssh,http,rules
+
+10.0.0.2   34.48.67.128
+
+gcloud compute instances create us-test-02 \
+--subnet subnet-us-west1 \
+--zone us-west1-b \
+--machine-type e2-standard-2 \
+--tags ssh,http,rules
+
+10.1.0.2 34.19.31.0
+
+gcloud compute instances create us-test-03 \
+--subnet subnet-us-east1 \
+--zone us-east1-b \
+--machine-type e2-standard-2 \
+--tags ssh,http,rules
+
+10.2.0.2 35.190.172.1
+
+gcloud compute instances create us-test-04 \
+--subnet subnet-us-east4 \
+--zone us-east4-a \
+--tags ssh,http
+
+--------------------------------------------------------------------------------------------------
+ping -c 3 34.19.31.0
+ping -c 3 35.190.172.1
+
+ping -c 3 34.48.67.128
+
+ping -c 3 us-test-02.us-west1-b
+ping -c 3 us-test-03.us-east1-b
+
+An internal fully qualified domain name (FQDN) for an instance looks like this: hostName.[ZONE].c.[PROJECT_ID].internal .
+
+--------------------------------------------------------------------------------------------------
+
+sudo apt-get update
+sudo apt-get -y install traceroute mtr tcpdump iperf whois host dnsutils siege
+
+traceroute -m 255 google.com
+traceroute www.icann.org
+traceroute www.wikipedia.org
+traceroute www.adcash.com
+traceroute -m 255 bad.horse
+
+iperf -s #run in server mode
+iperf -c us-test-01.us-east4-a #run in client mode
+
+iperf -c us-test-02.us-west1-b -u -b 2G #iperf client side - send 2 Gbits/s
+		got 1.97 GBytes  1.69 Gbits/sec
+		
+iperf -c us-test-01.us-east4-a -P 20
+		[SUM] 0.0000-10.1155 sec  4.55 GBytes  3.86 Gbits/sec
+
+https://www.amazon.com/TCP-Ip-Illustrated-Volume-Protocols/dp/9332535957/ref=dp_ob_title_bk
+https://github.com/eeertekin/bbcp
+
+
+
+--------------------------------------------------------------------------------------------------
+
+
+gcloud compute networks create vpc-network-h6nc \
+    --subnet-mode=custom \
+    --bgp-routing-mode=regional
+
+gcloud compute networks subnets create subnet-a-zuhz \
+    --network=vpc-network-h6nc \
+    --range=10.10.10.0/24 \
+    --region=us-central1
+
+gcloud compute networks subnets create subnet-b-gngj \
+    --network=vpc-network-h6nc \
+    --range=10.10.20.0/24 \
+    --region=us-east1
+
+gcloud compute firewall-rules create pdfx-firewall-ssh \
+    --network=vpc-network-h6nc \
+    --priority=1000 \
+    --direction=INGRESS \
+    --action=ALLOW \
+    --source-ranges=0.0.0.0/0 \
+    --rules=tcp:22
+    
+	--target-tags=all-instances \
+
+gcloud compute firewall-rules create bijr-firewall-rdp \
+    --network=vpc-network-h6nc \
+    --priority=65535 \
+    --direction=INGRESS \
+    --action=ALLOW \
+    --source-ranges=0.0.0.0/24 \
+    --rules=tcp:3389
+	
+    --target-tags=all-instances \
+
+gcloud compute firewall-rules create mtvj-firewall-icmp \
+    --network=vpc-network-h6nc \
+    --priority=1000 \
+    --direction=INGRESS \
+    --action=ALLOW \
+    --source-ranges=10.10.10.0/24,10.10.20.0/24 \
+    --rules=icmp
+	
+    --target-tags=all-instances \
+
+gcloud compute instances create us-test-01 \
+    --subnet=subnet-a-zuhz \
+    --zone=us-central1-c 
+	
+	35.239.118.125
+	
+	
+gcloud compute instances create us-test-02 \
+    --subnet=subnet-b-gngj \
+    --zone=us-east1-d 
+	
+	34.138.135.47
+	
+	
+    --network-interface=subnet=SUBNET_A_NAME \
+    --machine-type=e2-medium \
+    --image-family=debian-11 \
+    --image-project=debian-cloud
+
+
+ping -c 3 34.138.135.47
+ping -c 3 10.10.20.2
+ping -c 3 us-test-02.us-east1-d
